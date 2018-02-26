@@ -29,7 +29,7 @@ class Matrix {
             for(int j = -1; j < this.columns - 1; j++){
                 this.matrix[i+1][j+1] = m.getValueAt(i, j) && indexWithinBounds(i, j);
             }
-        }
+        } 
     }
 
 
