@@ -2,20 +2,23 @@ package se.oscarbergqvist.gameoflife;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 /**
  * Created by Oscar Bergqvist on 2018-02-24.
  */
 
-public class View implements ActionListener{
+public class View implements ActionListener {
 
     /* Controller object*/
     private Controller controller;
 
     /* State matrix*/
     private Matrix currentState;
+
+    /* Timer for auto play */
+    private Timer timer;
+    private boolean autoPlayEnabled;
 
     /* UI state variables and constants */
     private static final double SCREEN_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth();
@@ -54,7 +57,9 @@ public class View implements ActionListener{
     View(Controller controller, Matrix currentState){
         this.controller = controller;
         this.currentState = currentState;
-
+        this.timer = new Timer(500, e -> controller.update(controller.getStep()));
+        timer.setInitialDelay(500);
+        this.autoPlayEnabled = false;
         initUI();
         initActionListeners();
     }
@@ -69,6 +74,7 @@ public class View implements ActionListener{
         worldPanel = new JPanel(){
             @Override
             public void paintComponent(Graphics g){
+                //System.out.println("I paintComponent()");
                 super.paintComponent(g);
                 paintWorld(g);
             }
@@ -86,9 +92,11 @@ public class View implements ActionListener{
         openFileChooserButton = new JButton("Get state from file");
 
         stepTextField = new JTextField(5);
+        stepTextField.setText("1");
         widthTextField = new JTextField(5);
+        widthTextField.setText("20");
         heightTextField = new JTextField(5);
-
+        heightTextField.setText("20");
         frame.setContentPane(containerPanel);
         containerPanel.add(worldPanel, BorderLayout.PAGE_START);
         containerPanel.add(controlPanel, BorderLayout.PAGE_END);
@@ -118,6 +126,16 @@ public class View implements ActionListener{
     }
 
     private void initActionListeners(){
+        worldPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int cellWidth = (int) Math.floor(WORLD_WIDTH/currentState.getColumns());
+                int cellHeight = (int) Math.floor(WORLD_HEIGHT/currentState.getRows());
+                int i = (int) Math.floor(e.getX()/cellWidth);
+                int j = (int) Math.floor(e.getY()/cellHeight);
+                controller.change(i, j);
+            }
+        });
         stepButton.addActionListener(this);
         autoButton.addActionListener(this);
         newButton.addActionListener(this);
@@ -125,24 +143,35 @@ public class View implements ActionListener{
     }
 
     private void paintWorld(Graphics g) {
+        //System.out.println("I paintWorld()");
         Graphics2D g2d = (Graphics2D) g;
-        Color white = new Color(255,255,255);
-        Color black = new Color(0,0,0);
+        Color cellColor = new Color(255,255,255);
+        Color bgColor = new Color(0,0,0);
+        Color gridColor = new Color(30, 30, 30);
+
         int ROWS = currentState.getRows();
         int COLUMNS = currentState.getColumns();
 
-        int cellWidth = (int) Math.floor(WORLD_WIDTH/ROWS);
-        int cellHeight = (int) Math.floor(WORLD_HEIGHT/COLUMNS);
+        int cellWidth = (int) Math.floor(WORLD_WIDTH/COLUMNS);
+        int cellHeight = (int) Math.floor(WORLD_HEIGHT/ROWS);
 
-        for(int i = 0; i <= currentState.getColumns(); i++){
-            for(int j = 0; j <= currentState.getRows(); j++){
+        for(int i = 0; i <= COLUMNS; i++){
+            for(int j = 0; j <= ROWS; j++){
                 if(currentState.getValueAt(i, j))
-                    g2d.setColor(white);
+                    g2d.setColor(cellColor);
                 else
-                    g2d.setColor(black);
-                g2d.fillRect(j*cellWidth,i*cellHeight,cellWidth,cellHeight);
+                    g2d.setColor(bgColor);
+                g2d.fillRect(i*cellWidth,j*cellHeight,cellWidth,cellHeight);
             }
         }
+
+        g2d.setColor(gridColor);
+
+        for(int j = 0; j < ROWS; j++)
+            g2d.drawLine(0, j*cellHeight, cellWidth*COLUMNS, j*cellHeight);
+
+        for(int i = 0; i < COLUMNS; i++)
+            g2d.drawLine(i*cellWidth,0,i*cellWidth,cellHeight*ROWS);
 
         //System.out.println("In paintWorld");
     }
@@ -160,6 +189,7 @@ public class View implements ActionListener{
     }
 
     void updateWorld(Matrix newState){
+        //System.out.println("I updateWorld()");
         this.currentState = newState;
         worldPanel.repaint();
     }
@@ -170,23 +200,43 @@ public class View implements ActionListener{
             int step = controller.getStep();
             try{
                 step = Integer.parseInt(stepTextField.getText());
-                if (step<=0)
+                if (step <= 0)
                     throw new Exception();
             } catch(Exception ex){
                 Controller.log(Controller.LogType.ERROR, "Please enter an positive integer");
             }
-            this.controller.setStep(step);
-            this.controller.update(step);
+            controller.setStep(step);
+            controller.update(step);
         }
         else if (e.getSource() == autoButton){
-
+            stepButton.setEnabled(!stepButton.isEnabled());
+            if(autoPlayEnabled){
+                autoPlayEnabled = false;
+                timer.stop();
+                stepTextField.setEnabled(true);
+                stepButton.setEnabled(true);
+            } else{
+                autoPlayEnabled = true;
+                stepButton.setEnabled(false);
+                stepTextField.setEnabled(false);
+                timer.start();
+            }
         }
-        else if (e.getSource() == newButton){
 
+        else if (e.getSource() == newButton){
+            if(autoPlayEnabled){
+                autoPlayEnabled = false;
+                timer.stop();
+                stepTextField.setEnabled(true);
+                stepButton.setEnabled(true);
+            }
+            int rows = Integer.parseInt(widthTextField.getText());
+            int columns = Integer.parseInt(heightTextField.getText());
+            controller.newInstance(rows, columns);
         }
         else if (e.getSource() == openFileChooserButton){
 
         }
-
     }
+
 }

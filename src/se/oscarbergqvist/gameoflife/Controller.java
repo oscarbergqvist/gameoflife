@@ -1,5 +1,6 @@
 package se.oscarbergqvist.gameoflife;
 
+import javax.swing.*;
 import java.io.File;
 
 /**
@@ -24,6 +25,7 @@ public class Controller {
     }
 
     private Controller() {
+        this.step = 1;
         currentState = new Matrix(100,100);
         currentState.toggleCell(1,0);
         currentState.toggleCell(1,1);
@@ -38,21 +40,23 @@ public class Controller {
     }
 
     void update(int step) {
-        previousState = new Matrix(currentState);
-        for(int i = 0; i < currentState.getRows(); i++){
-            for(int j = 0; j < currentState.getColumns(); j++){
-                //System.out.println("In update: " + Integer.toString(i) + " " + Integer.toString(j));
-                currentState.changeCell(i, j, previousState.cellSurviving(i, j));
-
+        //System.out.println("I update()");
+        for(int k = 0; k < step; k++) {
+            previousState = new Matrix(currentState);
+            for (int i = 0; i < currentState.getRows(); i++) {
+                for (int j = 0; j < currentState.getColumns(); j++) {
+                    //System.out.println("In update: " + Integer.toString(i) + " " + Integer.toString(j));
+                    currentState.changeCell(i, j, previousState.cellSurviving(i, j));
+                }
             }
         }
-
         view.updateWorld(currentState);
 
     }
 
-    void autoUpdate(){
-
+    void newInstance(int rows, int columns){
+        currentState = new Matrix(rows, columns);
+        view.updateWorld(currentState);
     }
 
     /* Log type enum */
@@ -72,8 +76,8 @@ public class Controller {
         this.step = step;
     }
 
-    void setAutoUpdate(boolean autoUpdate) {
-        this.autoUpdate = autoUpdate;
+    void toggleAutoUpdate(){
+        this.autoUpdate = !autoUpdate;
     }
 
     int getStep() {
