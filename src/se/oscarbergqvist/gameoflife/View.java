@@ -15,7 +15,7 @@ import java.io.File;
 /**
  * View creates the UI, using Swing graphics. Implements ActionListener.
  */
-public class View implements ActionListener {
+class View implements ActionListener {
 
     /* Controller & Matrix*/
     private Controller controller;
