@@ -240,6 +240,7 @@ public class View implements ActionListener
                 stepButton.setEnabled(true);
             } else
             {
+                //COMMENT!
                 try
                 {
                     int step = Integer.parseInt(stepTextField.getText());
